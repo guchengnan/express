@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Express接口测试</title>
+    <link rel="icon" type="image/x-icon" href="favicon.ico" />
+    <link rel="stylesheet" href="css/layui.css" />
+  </head>
+  <body>
+    <main style="padding: 24px">
+      <table class="layui-table">
+        <thead>
+          <tr>
+            <th>序号</th>
+            <th>姓名</th>
+            <th>操作</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+      <div class="layui-row layui-col-space">
+        <div class="layui-col-md12">
+          <div class="layui-card" style="box-shadow: 0 0 1px 1px rgba(0,0,0,0.1);">
+            <div class="layui-card-header">新增user人员</div>
+            <div class="layui-card-body">
+              <form class="layui-form" action="">
+                <div class="layui-form-item">
+                  <label class="layui-form-label">姓名</label>
+                  <div class="layui-input-block">
+                    <input
+                      type="text"
+                      name="title"
+                      required
+                      lay-verify="required"
+                      placeholder="请输入姓名(xss进程防护中，尽情输入···)"
+                      autocomplete="off"
+                      class="layui-input"
+                    />
+                  </div>
+                </div>
+                <div class="layui-form-item">
+                  <div class="layui-input-block">
+                    <button class="layui-btn" lay-submit lay-filter="formDemo">
+                      立即提交
+                    </button>
+                  </div>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+    <script>
+      // 获取tbody、form
+      const tbody = document.querySelector("tbody");
+      const form = document.querySelector("form");
+      const input = document.querySelector("input");
+      tbody.onclick = function (e) {
+        const target = e.target;
+        if (target.nodeName !== "BUTTON") return;
+        const id = target.getAttribute("data-id");
+        // 编辑
+        if (target.className.includes("layui-btn-info")) {
+          const name = escapeHTML(window.prompt("请输入姓名"));
+          saveUser({ id, name });
+        }
+        // 删除
+        if (target.className.includes("layui-btn-danger")) {
+          if (window.confirm("确定删除？")) {
+            delUser(id);
+          }
+        }
+      };
+      form.onsubmit = function (e) {
+        const name = escapeHTML(input.value);
+        saveUser({ name });
+        input.value = "";
+        return false;
+      };
+
+      // 防止xss
+      function escapeHTML(str) {
+        return str.replace(
+          /[&<>'"]/g,
+          (tag) =>
+            ({
+              "&": "&amp;",
+              "<": "&lt;",
+              ">": "&gt;",
+              "'": "&#39;",
+              '"': "&quot;",
+            }[tag] || tag)
+        );
+      }
+
+      // 获取user列表
+      function getUserList() {
+        fetch(`http://localhost:3000/api/getUserList`)
+          .then((response) => {
+            response.json().then(function (data) {
+              const userList = data.user;
+              const template = [];
+              userList.forEach((item) => {
+                template.push(`<tr>
+                            <td>${item.id}</td>
+                            <td>${item.name}</td>
+                            <td>
+                              <button type="button" class="layui-btn layui-btn-xs  layui-btn-info"" data-id="${item.id}">编辑</button>
+                              <button type="button" 	class="layui-btn layui-btn-xs layui-btn-danger" data-id="${item.id}">删除</button>
+                            </td>
+                          </tr>`);
+              });
+              tbody.innerHTML = template.join("");
+            });
+          })
+          .catch((e) => console.log(e));
+      }
+
+      // 新增或修改user
+      function saveUser(data) {
+        fetch(`http://localhost:3000/api/saveUser`, {
+          method: "POST",
+          body: JSON.stringify(data),
+          headers: new Headers({
+            "Content-Type": "application/json",
+          }),
+        })
+          .then((response) => {
+            getUserList();
+          })
+          .catch((e) => console.log(e));
+      }
+
+      // 删除
+      function delUser(id) {
+        fetch(`http://localhost:3000/api/delUserById`, {
+          method: "POST",
+          body: JSON.stringify({ id }),
+          headers: new Headers({
+            "Content-Type": "application/json",
+          }),
+        })
+          .then((response) => {
+            getUserList();
+          })
+          .catch((e) => console.log(e));
+      }
+
+      getUserList();
+    </script>
+  </body>
+</html>
