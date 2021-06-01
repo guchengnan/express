@@ -1,9 +1,12 @@
 const express = require('express')
 const router = require('./router')
 const process = require('child_process');
+const compression = require('compression');
 const app = express()
 const port = 3000
 
+// 开启gzip
+app.use(compression());
 // 解析post
 app.use(express.json());
 app.use(express.urlencoded());
